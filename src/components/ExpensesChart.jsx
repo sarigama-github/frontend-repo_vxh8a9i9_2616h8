@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // Simple inline chart using SVG to avoid extra deps
 function MiniBar({ data, height = 120 }) {
@@ -21,19 +21,34 @@ function MiniBar({ data, height = 120 }) {
 }
 
 export default function ExpensesChart() {
-  const data = useMemo(
-    () => [
-      { label: "Jan", value: 8200 },
-      { label: "Feb", value: 6200 },
-      { label: "Mar", value: 9800 },
-      { label: "Apr", value: 7600 },
-      { label: "May", value: 11300 },
-      { label: "Jun", value: 9400 },
-    ],
-    []
-  );
+  const API = import.meta.env.VITE_BACKEND_URL;
+  const [raw, setRaw] = useState([]);
 
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`${API}/expenses`);
+        const data = await res.json();
+        setRaw(data.items || []);
+      } catch (e) {
+        console.error("Failed to fetch expenses", e);
+      }
+    };
+    load();
+  }, [API]);
+
+  // Group by month label
+  const data = useMemo(() => {
+    const map = new Map();
+    for (const e of raw) {
+      const d = new Date(e.date);
+      const key = isNaN(d.getTime()) ? "Unknown" : `${d.toLocaleString("default", { month: "short" })} ${d.getFullYear()}`;
+      map.set(key, (map.get(key) || 0) + Number(e.amount || 0));
+    }
+    return Array.from(map.entries()).map(([label, value]) => ({ label, value }));
+  }, [raw]);
+
+  const total = raw.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-6 md:px-6">
@@ -44,12 +59,9 @@ export default function ExpensesChart() {
               <h3 className="text-base font-semibold text-slate-900">Expenses Overview</h3>
               <p className="text-sm text-slate-500">Track catering, staff, decor and more</p>
             </div>
-            <select className="rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-700">
-              <option>Last 6 months</option>
-              <option>Last 12 months</option>
-            </select>
+            <span className="text-xs text-slate-500">Live</span>
           </div>
-          <MiniBar data={data} />
+          <MiniBar data={data.length ? data : [{ label: "No data", value: 1 }]} />
           <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-600">
             {data.map((d) => (
               <div key={d.label} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-2 py-1">
@@ -58,29 +70,28 @@ export default function ExpensesChart() {
                 <span className="font-medium text-slate-900">${d.value.toLocaleString()}</span>
               </div>
             ))}
+            {data.length === 0 && (
+              <div className="text-slate-500">No expenses yet</div>
+            )}
           </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h4 className="mb-2 text-sm font-semibold text-slate-900">This Period</h4>
+          <h4 className="mb-2 text-sm font-semibold text-slate-900">Total</h4>
           <p className="text-2xl font-bold text-slate-900">${total.toLocaleString()}</p>
-          <p className="text-sm text-emerald-600">Under budget by 6%</p>
+          <p className="text-sm text-emerald-600">Live</p>
           <ul className="mt-4 space-y-3 text-sm">
-            <li className="flex items-center justify-between">
-              <span className="text-slate-600">Catering</span>
-              <span className="font-medium text-slate-900">$4,200</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="text-slate-600">Staffing</span>
-              <span className="font-medium text-slate-900">$3,400</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="text-slate-600">Decor</span>
-              <span className="font-medium text-slate-900">$2,100</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span className="text-slate-600">Other</span>
-              <span className="font-medium text-slate-900">$1,800</span>
-            </li>
+            {raw.slice(0, 6).map((e) => {
+              const d = new Date(e.date);
+              return (
+                <li key={e._id} className="flex items-center justify-between">
+                  <span className="text-slate-600">{e.category || "Other"} • {isNaN(d.getTime()) ? e.date : d.toLocaleDateString()}</span>
+                  <span className="font-medium text-slate-900">${Number(e.amount || 0).toLocaleString()}</span>
+                </li>
+              );
+            })}
+            {raw.length === 0 && (
+              <li className="text-slate-500">No recent expenses</li>
+            )}
           </ul>
         </div>
       </div>

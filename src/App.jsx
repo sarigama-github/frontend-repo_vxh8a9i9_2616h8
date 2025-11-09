@@ -2,6 +2,7 @@ import Navbar from "./components/Navbar";
 import OverviewCards from "./components/OverviewCards";
 import BookingsTable from "./components/BookingsTable";
 import ExpensesChart from "./components/ExpensesChart";
+import NewEntryForms from "./components/NewEntryForms";
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <main>
         <Hero />
         <OverviewCards />
+        <NewEntryForms />
         <ExpensesChart />
         <BookingsTable />
       </main>
@@ -31,12 +33,12 @@ function Hero() {
               VenueOS helps wedding venues, banquets and event spaces run smoothly — from first inquiry to final invoice.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <button className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow hover:bg-slate-50">
+              <a href="#forms" className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow hover:bg-slate-50">
                 Add a Booking
-              </button>
-              <button className="rounded-md border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20">
+              </a>
+              <a href="#forms" className="rounded-md border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20">
                 Record Expense
-              </button>
+              </a>
             </div>
           </div>
           <ul className="grid w-full max-w-md grid-cols-2 gap-3 text-sm text-white/90 md:max-w-lg">
